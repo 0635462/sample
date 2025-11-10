@@ -210,14 +210,17 @@
                     });
 
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        // HTTPエラーの場合、ステータスコードを含めてエラーを投げる
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status} (${response.statusText}). Response body: ${errorBody.substring(0, 100)}...`);
                     }
 
                     const result = await response.json();
                     const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
                     
                     if (!jsonText) {
-                        throw new Error("Received empty JSON response from API.");
+                        // JSONテキストが空の場合、完全な結果をログに含める
+                        throw new Error("Received empty JSON response from API. Full result logged in console.");
                     }
 
                     const parsedJson = JSON.parse(jsonText);
@@ -225,12 +228,14 @@
 
                 } catch (error) {
                     lastError = error;
+                    console.error(`Attempt ${attempt + 1} failed.`, error);
                     // Exponential backoff
                     if (attempt < maxRetries - 1) {
                         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
                     }
                 }
             }
+            // 全てのリトライが失敗した場合
             throw new Error(`Failed to get score after ${maxRetries} attempts. Last error: ${lastError.message}`);
         }
 
@@ -344,13 +349,16 @@
                     displayScore(scoreData);
                     statusText.textContent = '🎉 採点完了！結果を確認してください。';
                 } catch (e) {
-                    console.error("Scoring failed:", e);
+                    // AI採点に失敗した場合のより具体的なエラー処理
+                    console.error("Scoring failed (API/JSON Error):", e);
                     scoreText.textContent = 'N/A';
                     scoreText.classList.remove('text-success-green', 'text-secondary-yellow', 'text-gray-500');
                     scoreText.classList.add('text-danger-red');
+                    
+                    // エラーメッセージにAPI関連のヒントを追加
                     retranslationText.textContent = 'AIによる採点処理中にエラーが発生しました。'; 
-                    feedbackText.textContent = '採点に失敗しました。もう一度試してください。 (Scoring failed. Please try again.)';
-                    statusText.textContent = '❌ 採点中にエラーが発生しました。'; 
+                    feedbackText.textContent = 'サーバー応答またはJSON解析エラーです。コンソールを確認し、もう一度お試しください。 (Server/JSON error. Check console.)';
+                    statusText.textContent = '❌ 採点中に重大なエラーが発生しました。'; 
                 }
             };
 
