@@ -186,8 +186,9 @@
 
             const systemPrompt = "You are a friendly and encouraging English teacher for elementary school students. Your task is to evaluate a single English sentence provided by the student. Provide a score from 1 to 100 based on correctness, clarity, and fluency. The scoring should be generous and focused on positive reinforcement. You must also provide the best Japanese translation of the spoken sentence, suitable for a child. Always return the response in the specified JSON format.";
             const userQuery = `Please score, give feedback, and provide a Japanese translation for the following English sentence spoken by a child: "${userTranscript}"`;
-            const apiKey = ""; 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            // 修正: APIキーは環境側で自動的に処理されるため、URLから削除します。
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`;
 
             const payload = {
                 contents: [{ parts: [{ text: userQuery }] }],
@@ -212,6 +213,7 @@
                     if (!response.ok) {
                         // HTTPエラーの場合、ステータスコードを含めてエラーを投げる
                         const errorBody = await response.text();
+                        // 403エラーが続く場合、認証の問題（キーがない）ことを示唆します。
                         throw new Error(`HTTP error! status: ${response.status} (${response.statusText}). Response body: ${errorBody.substring(0, 100)}...`);
                     }
 
